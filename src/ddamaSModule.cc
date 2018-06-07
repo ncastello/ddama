@@ -17,6 +17,7 @@
 #include "TFile.h"
 #include "TH1F.h"
 #include "TH2F.h"
+#include "TCanvas.h"
 
 //#include <ctime>
 //#include <cstdlib>
@@ -101,13 +102,13 @@ namespace dqm4hep
 
     	DQMModuleApi::cd(this);
 
+        DQMModuleApi::bookRealHistogram1D(this, _meH1PedestalDist, "PEDESTAL_COLUMN", \
+                "Column Pedestal distribution",8544, 0.0, 8544.0 );
+    	_meH1PedestalDist->setDescription("Pedestal mean column distribution");
+
         DQMModuleApi::bookRealHistogram1D(this, _meH1PixelDist, "PIXEL_CHARGE", \
                 "Pixel charge distribution", 109317,-54658.0, 54659.0);
     	_meH1PixelDist->setDescription("Charge Pixel distribution");
-
-        DQMModuleApi::bookRealHistogram1D(this, _meH1PedestalDist, "PEDESTAL_COLUMN", \
-                "Column Pedestal distribution",8544, 0.0, 8544.0 );
-    	_meH1PedestalDist->setDescription("Column Pedestal distribution");
 
         DQMModuleApi::bookRealHistogram2D(this, _meH2RawImage, "RAW_IMAGE", \
                 "Raw Image", 8544, 0.0, 8544.0, 193, 0.0, 193.0 );
@@ -129,14 +130,32 @@ namespace dqm4hep
 
     StatusCode ddamaSModule::process()
     {
-        for(unsigned int i=1; i<_h1PixelDist->GetNbinsX()+1;++i)
-        {
-    	    _meH1PixelDist->get<TH1F>()->SetBinContent(i,_h1PixelDist->GetBinContent(i));
-        }
+        // dark current: b_pedestal - b_overscan, both comming from the fit to
+        // the pedestal_mean_col histogram
         for(unsigned int i=1; i<_h1PedestalDist->GetNbinsX()+1;++i)
         {
     	    _meH1PedestalDist->get<TH1F>()->SetBinContent(i,_h1PedestalDist->GetBinContent(i));
         }
+        _meH1PedestalDist->get<TH1F>()->SetMarkerStyle(2);
+        _meH1PedestalDist->get<TH1F>()->SetMarkerSize(0.5);
+        _meH1PedestalDist->get<TH1F>()->SetMarkerColor(12);
+        _meH1PedestalDist->get<TH1F>()->SetLineColor(12);
+        _meH1PedestalDist->get<TH1F>()->SetLineWidth(1);
+        _meH1PedestalDist->setDrawOption("E");
+
+        for(unsigned int i=1; i<_h1PixelDist->GetNbinsX()+1;++i)
+        {
+    	    _meH1PixelDist->get<TH1F>()->SetBinContent(i,_h1PixelDist->GetBinContent(i));
+        }
+        _meH1PixelDist->set<TH1F>() = _h1PixelDist.Clone()
+        _meH1PixelDist->get<TH1F>()->SetMarkerStyle(2);
+        _meH1PixelDist->get<TH1F>()->SetMarkerSize(0.5);
+        _meH1PixelDist->get<TH1F>()->SetMarkerColor(12);
+        _meH1PixelDist->get<TH1F>()->SetLineColor(12);
+        _meH1PixelDist->get<TH1F>()->SetLineWidth(1);
+        _meH1PixelDist->setDrawOption("E");
+        _meH1PixelDist->get<TH1F>()->GetXaxis()->SetRangeUser(-150., 150.);
+
         //for(unsigned int i=1; i<_h2RawImage->GetNbinsX()+1;++i)
         //{
         //    for(unsigned int j=0; i<_h2RawImage->GetNbinsY()+1;++j)
