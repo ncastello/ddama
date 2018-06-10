@@ -19,9 +19,6 @@
 #include "TH2F.h"
 #include "TCanvas.h"
 
-//#include <ctime>
-//#include <cstdlib>
-//#include <limits>
 #include<csignal>
 
 namespace dqm4hep
@@ -38,7 +35,8 @@ namespace dqm4hep
         _inputFile(nullptr),
         _h2RawImage(nullptr),
         _h1PixelDist(nullptr),
-        _h1PedestalDist(nullptr)
+        _h1PedestalDist(nullptr),
+        _extid("1")
     {
         setVersion(0, 1, 0);
     }
@@ -49,24 +47,19 @@ namespace dqm4hep
     }
 
 
-    StatusCode ddamaSModule::readSettings(const TiXmlHandle /*xmlHandle*/)
+    StatusCode ddamaSModule::readSettings(const TiXmlHandle xmlHandle)
     {
-        /*LOG4CXX_INFO( dqmMainLogger , "Module : " << getName() << " -- readSettings()" );
+        LOG4CXX_INFO( dqmMainLogger , "Module : " << getName() << " -- readSettings()" );
 
-	    m_min = -400;
-	    RETURN_RESULT_IF_AND_IF(STATUS_CODE_SUCCESS, STATUS_CODE_NOT_FOUND,
-                !=, DQMXmlHelper::readParameterValue(xmlHandle,
-			    "Min", m_min));
+        RETURN_RESULT_IF_AND_IF(STATUS_CODE_SUCCESS, STATUS_CODE_NOT_FOUND, !=, DQMXmlHelper::readParameterValue(xmlHandle,
+                    "CCD","_extid");
 
-	    m_max = 400;
-	    RETURN_RESULT_IF_AND_IF(STATUS_CODE_SUCCESS, STATUS_CODE_NOT_FOUND,
-                !=, DQMXmlHelper::readParameterValue(xmlHandle,
-			    "Max", m_max));
+        RETURN_RESULT_IF_AND_IF(STATUS_CODE_SUCCESS, STATUS_CODE_NOT_FOUND, !=, DQMModuleApi::registerQualityTestFactory(this,
+                    "MeanWithinExpectedTest", new DQMMeanWithinExpectedTest::Factory()));
 
-	    // max must be greater than min ...
-	        if(m_min >= m_max)
-		return STATUS_CODE_INVALID_PARAMETER;
-        */
+        RETURN_RESULT_IF_AND_IF(STATUS_CODE_SUCCESS, STATUS_CODE_NOT_FOUND, !=, DQMXmlHelper::createQualityTest(this, xmlHandle,
+                    "MeanAround0Short"));
+
         return STATUS_CODE_SUCCESS;
     }
 
@@ -75,7 +68,9 @@ namespace dqm4hep
     {
         // Initialization input ROOT file(s)
         // XXX hardcoded file name, not checked if file or histos exists, ...
-        _inputFile = std::unique_ptr<TFile>(new TFile("/damic/working/d44_snolab_Int-800_Exp-30000_3337_1.root"));
+
+        const char * rootfilename = "/damic/working/recon_roots/d44_snolab_Int-800_Exp-30000_3337_1.root";
+        _inputFile = std::unique_ptr<TFile>(new TFile(rootfilename));
 
         _h2RawImage = static_cast<TH2F*>(_inputFile->Get("image_raw"));
         _h1PixelDist = static_cast<TH1F*>(_inputFile->Get("pixel_distribution"));
@@ -90,9 +85,15 @@ namespace dqm4hep
 
     StatusCode ddamaSModule::endOfCycle()
     {
+        LOG4CXX_INFO( dqmMainLogger , "Module : " << getName() << " -- endOfCycle()" );
+
         _inputFile->Close();
+        // XXX To stop running DDAMA
         /*std::raise(SIGINT);
          */
+        // run all quality tests on all
+        RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, DQMModuleApi::runQualityTests(this));
+
 	    return STATUS_CODE_SUCCESS;
     }
 
@@ -102,15 +103,26 @@ namespace dqm4hep
 
     	DQMModuleApi::cd(this);
 
-        DQMModuleApi::bookRealHistogram1D(this, _meH1PedestalDist, "PEDESTAL_COLUMN", \
+        // ME::Pedestal Column distribution
+        DQMModuleApi::bookRealHistogram1D(this, _meH1PedestalDist, "PEDESTAL_COLUMN",
                 "Column Pedestal distribution",8544, 0.0, 8544.0 );
     	_meH1PedestalDist->setDescription("Pedestal mean column distribution");
+        _meH1PedestalDist->setResetPolicy(END_OF_CYCLE_RESET_POLICY);
 
-        DQMModuleApi::bookRealHistogram1D(this, _meH1PixelDist, "PIXEL_CHARGE", \
+
+        // ME::Pixel distribution
+        DQMModuleApi::bookRealHistogram1D(this, _meH1PixelDist, "PIXEL_CHARGE",
                 "Pixel charge distribution", 109317,-54658.0, 54659.0);
-    	_meH1PixelDist->setDescription("Charge Pixel distribution");
+    	_meH1PixelDist->setDescription("Pixel value distribution in blanks images (white noise)"
+                " and in 8 hours exposure (white noise, leakage current and signal) when operating at "
+                "T~140K");
+        _meH1PixelDist->setResetPolicy(END_OF_CYCLE_RESET_POLICY);
+        // -----> Include the QT to the ME
+        RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, DQMModuleApi::addQualityTest(this,
+                                _meH1PixelDist, "MeanAround0Short"));
 
-        DQMModuleApi::bookRealHistogram2D(this, _meH2RawImage, "RAW_IMAGE", \
+        // ME::Raw Image
+        DQMModuleApi::bookRealHistogram2D(this, _meH2RawImage, "RAW_IMAGE",
                 "Raw Image", 8544, 0.0, 8544.0, 193, 0.0, 193.0 );
     	_meH2RawImage->setDescription("Raw image");
 
@@ -130,8 +142,6 @@ namespace dqm4hep
 
     StatusCode ddamaSModule::process()
     {
-        // dark current: b_pedestal - b_overscan, both comming from the fit to
-        // the pedestal_mean_col histogram
         for(unsigned int i=1; i<_h1PedestalDist->GetNbinsX()+1;++i)
         {
     	    _meH1PedestalDist->get<TH1F>()->SetBinContent(i,_h1PedestalDist->GetBinContent(i));
@@ -147,14 +157,13 @@ namespace dqm4hep
         {
     	    _meH1PixelDist->get<TH1F>()->SetBinContent(i,_h1PixelDist->GetBinContent(i));
         }
-        _meH1PixelDist->set<TH1F>() = _h1PixelDist.Clone()
         _meH1PixelDist->get<TH1F>()->SetMarkerStyle(2);
         _meH1PixelDist->get<TH1F>()->SetMarkerSize(0.5);
         _meH1PixelDist->get<TH1F>()->SetMarkerColor(12);
         _meH1PixelDist->get<TH1F>()->SetLineColor(12);
         _meH1PixelDist->get<TH1F>()->SetLineWidth(1);
-        _meH1PixelDist->setDrawOption("E");
         _meH1PixelDist->get<TH1F>()->GetXaxis()->SetRangeUser(-150., 150.);
+        _meH1PixelDist->setDrawOption("E");
 
         //for(unsigned int i=1; i<_h2RawImage->GetNbinsX()+1;++i)
         //{

@@ -38,8 +38,6 @@ namespace dqm4hep
 	        StatusCode endModule();
 
         protected:
-            int _runID;
-            std::vector<int> _EXTID;
             DQMMonitorElementPtr _meH2RawImage;
 	        DQMMonitorElementPtr _meH1PixelDist;
             DQMMonitorElementPtr _meH1PedestalDist;
@@ -50,7 +48,9 @@ namespace dqm4hep
             TH1F * _h1PixelDist;
             TH1F * _h1PedestalDist;
 
+            int _extid;
+
     };
 }
 
-
+#endif
