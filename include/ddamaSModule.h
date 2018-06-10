@@ -40,15 +40,17 @@ namespace dqm4hep
         protected:
             DQMMonitorElementPtr _meH2RawImage;
 	        DQMMonitorElementPtr _meH1PixelDist;
-            DQMMonitorElementPtr _meH1PedestalDist;
+            DQMMonitorElementPtr _meH1PedMeanDist;
+            DQMMonitorElementPtr _meH1PedSigmaDist;
+            DQMMonitorElementPtr _meH1PedChi2Dist;
 
         private:
             std::unique_ptr<TFile> _inputFile;
             TH2F * _h2RawImage;
             TH1F * _h1PixelDist;
-            TH1F * _h1PedestalDist;
-
-            int _extid;
+            TH1F * _h1PedMeanDist;
+            TH1F * _h1PedSigmaDist;
+            TH1F * _h1PedChi2Dist;
 
     };
 }

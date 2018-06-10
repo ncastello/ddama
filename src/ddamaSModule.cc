@@ -17,7 +17,6 @@
 #include "TFile.h"
 #include "TH1F.h"
 #include "TH2F.h"
-#include "TCanvas.h"
 
 #include<csignal>
 
@@ -31,12 +30,15 @@ namespace dqm4hep
         DQMStandaloneModule(),
         _meH2RawImage(nullptr),
         _meH1PixelDist(nullptr),
-        _meH1PedestalDist(nullptr),
+        _meH1PedMeanDist(nullptr),
+        _meH1PedSigmaDist(nullptr),
+        _meH1PedChi2Dist(nullptr),
         _inputFile(nullptr),
         _h2RawImage(nullptr),
         _h1PixelDist(nullptr),
-        _h1PedestalDist(nullptr),
-        _extid("1")
+        _h1PedMeanDist(nullptr),
+        _h1PedSigmaDist(nullptr),
+        _h1PedChi2Dist(nullptr)
     {
         setVersion(0, 1, 0);
     }
@@ -50,9 +52,6 @@ namespace dqm4hep
     StatusCode ddamaSModule::readSettings(const TiXmlHandle xmlHandle)
     {
         LOG4CXX_INFO( dqmMainLogger , "Module : " << getName() << " -- readSettings()" );
-
-        RETURN_RESULT_IF_AND_IF(STATUS_CODE_SUCCESS, STATUS_CODE_NOT_FOUND, !=, DQMXmlHelper::readParameterValue(xmlHandle,
-                    "CCD","_extid");
 
         RETURN_RESULT_IF_AND_IF(STATUS_CODE_SUCCESS, STATUS_CODE_NOT_FOUND, !=, DQMModuleApi::registerQualityTestFactory(this,
                     "MeanWithinExpectedTest", new DQMMeanWithinExpectedTest::Factory()));
@@ -74,10 +73,14 @@ namespace dqm4hep
 
         _h2RawImage = static_cast<TH2F*>(_inputFile->Get("image_raw"));
         _h1PixelDist = static_cast<TH1F*>(_inputFile->Get("pixel_distribution"));
-        _h1PedestalDist = static_cast<TH1F*>(_inputFile->Get("pedestal_fit_results/pedestal_mean_col"));
+        _h1PedMeanDist = static_cast<TH1F*>(_inputFile->Get("pedestal_fit_results/pedestal_mean_col"));
+        _h1PedSigmaDist = static_cast<TH1F*>(_inputFile->Get("pedestal_fit_results/pedestal_sigma_col"));
+        _h1PedChi2Dist = static_cast<TH1F*>(_inputFile->Get("pedestal_fit_results/pedestal_chi2_ndf_col"));
 
         _meH1PixelDist->setToPublish(true);
-        _meH1PedestalDist->setToPublish(true);
+        _meH1PedMeanDist->setToPublish(true);
+        _meH1PedSigmaDist->setToPublish(true);
+        _meH1PedChi2Dist->setToPublish(true);
         _meH2RawImage->setToPublish(true);
 
 	    return STATUS_CODE_SUCCESS;
@@ -103,12 +106,23 @@ namespace dqm4hep
 
     	DQMModuleApi::cd(this);
 
-        // ME::Pedestal Column distribution
-        DQMModuleApi::bookRealHistogram1D(this, _meH1PedestalDist, "PEDESTAL_COLUMN",
-                "Column Pedestal distribution",8544, 0.0, 8544.0 );
-    	_meH1PedestalDist->setDescription("Pedestal mean column distribution");
-        _meH1PedestalDist->setResetPolicy(END_OF_CYCLE_RESET_POLICY);
+        // ME::PedMean Column distribution
+        DQMModuleApi::bookRealHistogram1D(this, _meH1PedMeanDist, "FIT_PEDESTAL_COL_MEAN",
+                "mean-column Pedestal distribution",8544, 0.0, 8544.0 );
+    	_meH1PedMeanDist->setDescription("Mean of the fitted column pedestal distribution");
+        _meH1PedMeanDist->setResetPolicy(END_OF_CYCLE_RESET_POLICY);
 
+        // ME::PedSigma Column distribution
+        DQMModuleApi::bookRealHistogram1D(this, _meH1PedSigmaDist, "FIT_PEDESTAL_COL_SIGMA",
+                "sigma-column Pedestal distribution",8544, 0.0, 8544.0 );
+    	_meH1PedSigmaDist->setDescription("Sigma of the fitted column pedestal distribution");
+        _meH1PedSigmaDist->setResetPolicy(END_OF_CYCLE_RESET_POLICY);
+
+        // ME::PedChi2 Column distribution
+        DQMModuleApi::bookRealHistogram1D(this, _meH1PedChi2Dist, "FIT_PEDESTAL_COL_CHI",
+                "chi-squared column Pedestal distribution",8544, 0.0, 8544.0 );
+    	_meH1PedChi2Dist->setDescription("chi-squared of the fitted column pedestal distribution");
+        _meH1PedChi2Dist->setResetPolicy(END_OF_CYCLE_RESET_POLICY);
 
         // ME::Pixel distribution
         DQMModuleApi::bookRealHistogram1D(this, _meH1PixelDist, "PIXEL_CHARGE",
@@ -142,16 +156,39 @@ namespace dqm4hep
 
     StatusCode ddamaSModule::process()
     {
-        for(unsigned int i=1; i<_h1PedestalDist->GetNbinsX()+1;++i)
+        for(unsigned int i=1; i<_h1PedMeanDist->GetNbinsX()+1;++i)
         {
-    	    _meH1PedestalDist->get<TH1F>()->SetBinContent(i,_h1PedestalDist->GetBinContent(i));
+    	    _meH1PedMeanDist->get<TH1F>()->SetBinContent(i,_h1PedMeanDist->GetBinContent(i));
         }
-        _meH1PedestalDist->get<TH1F>()->SetMarkerStyle(2);
-        _meH1PedestalDist->get<TH1F>()->SetMarkerSize(0.5);
-        _meH1PedestalDist->get<TH1F>()->SetMarkerColor(12);
-        _meH1PedestalDist->get<TH1F>()->SetLineColor(12);
-        _meH1PedestalDist->get<TH1F>()->SetLineWidth(1);
-        _meH1PedestalDist->setDrawOption("E");
+        _meH1PedMeanDist->get<TH1F>()->SetMarkerStyle(2);
+        _meH1PedMeanDist->get<TH1F>()->SetMarkerSize(0.5);
+        _meH1PedMeanDist->get<TH1F>()->SetMarkerColor(12);
+        _meH1PedMeanDist->get<TH1F>()->SetLineColor(12);
+        _meH1PedMeanDist->get<TH1F>()->SetLineWidth(1);
+        _meH1PedMeanDist->setDrawOption("E");
+
+        for(unsigned int i=1; i<_h1PedSigmaDist->GetNbinsX()+1;++i)
+        {
+    	    _meH1PedSigmaDist->get<TH1F>()->SetBinContent(i,_h1PedSigmaDist->GetBinContent(i));
+        }
+        _meH1PedSigmaDist->get<TH1F>()->SetMarkerStyle(2);
+        _meH1PedSigmaDist->get<TH1F>()->SetMarkerSize(0.5);
+        _meH1PedSigmaDist->get<TH1F>()->SetMarkerColor(12);
+        _meH1PedSigmaDist->get<TH1F>()->SetLineColor(12);
+        _meH1PedSigmaDist->get<TH1F>()->SetLineWidth(1);
+        _meH1PedSigmaDist->setDrawOption("E");
+
+        for(unsigned int i=1; i<_h1PedChi2Dist->GetNbinsX()+1;++i)
+        {
+    	    _meH1PedChi2Dist->get<TH1F>()->SetBinContent(i,_h1PedChi2Dist->GetBinContent(i));
+        }
+        _meH1PedChi2Dist->get<TH1F>()->SetMarkerStyle(2);
+        _meH1PedChi2Dist->get<TH1F>()->SetMarkerSize(0.5);
+        _meH1PedChi2Dist->get<TH1F>()->SetMarkerColor(12);
+        _meH1PedChi2Dist->get<TH1F>()->SetLineColor(12);
+        _meH1PedChi2Dist->get<TH1F>()->SetLineWidth(1);
+        _meH1PixelDist->get<TH1F>()->GetXaxis()->SetRangeUser(0.0, 2.);
+        _meH1PedChi2Dist->setDrawOption("E");
 
         for(unsigned int i=1; i<_h1PixelDist->GetNbinsX()+1;++i)
         {
