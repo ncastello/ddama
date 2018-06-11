@@ -53,11 +53,17 @@ namespace dqm4hep
     {
         LOG4CXX_INFO( dqmMainLogger , "Module : " << getName() << " -- readSettings()" );
 
+        // Reading xml parameters for the test to be apply:
+        // test1
         RETURN_RESULT_IF_AND_IF(STATUS_CODE_SUCCESS, STATUS_CODE_NOT_FOUND, !=, DQMModuleApi::registerQualityTestFactory(this,
                     "MeanWithinExpectedTest", new DQMMeanWithinExpectedTest::Factory()));
-
         RETURN_RESULT_IF_AND_IF(STATUS_CODE_SUCCESS, STATUS_CODE_NOT_FOUND, !=, DQMXmlHelper::createQualityTest(this, xmlHandle,
                     "MeanAround0Short"));
+        // test 2
+        RETURN_RESULT_IF_AND_IF(STATUS_CODE_SUCCESS, STATUS_CODE_NOT_FOUND, !=, DQMModuleApi::registerQualityTestFactory(this,
+                    "Chi2FitFunctionTest", new DQMChi2FitFunctionTest::Factory()));
+        RETURN_RESULT_IF_AND_IF(STATUS_CODE_SUCCESS, STATUS_CODE_NOT_FOUND, !=, DQMXmlHelper::createQualityTest(this, xmlHandle,
+                    "Chi2FittingGauss"));
 
         return STATUS_CODE_SUCCESS;
     }
@@ -134,6 +140,9 @@ namespace dqm4hep
         // -----> Include the QT to the ME
         RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, DQMModuleApi::addQualityTest(this,
                                 _meH1PixelDist, "MeanAround0Short"));
+        RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, DQMModuleApi::addQualityTest(this,
+                                _meH1PixelDist, "Chi2FittingGauss"));
+
 
         // ME::Raw Image
         DQMModuleApi::bookRealHistogram2D(this, _meH2RawImage, "RAW_IMAGE",
