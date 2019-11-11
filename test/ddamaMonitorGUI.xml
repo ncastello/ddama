@@ -1,0 +1,38 @@
+<?xml version="1.0" ?>
+<dqm4hep>
+    <monitoring>
+        <dimDnsNode value="localhost" />
+        <view>
+            <meView>
+                <collector name="damic_me_collector">
+                    <module name="ddamaSModule">
+                        <item path="/" name="FIT_PEDESTAL_COL_CHI" checked="1" />
+                        <item path="/" name="FIT_PEDESTAL_COL_MEAN" checked="1" />
+                        <item path="/" name="FIT_PEDESTAL_COL_SIGMA" checked="1" />
+                        <item path="/" name="PIXEL_CHARGE" checked="1" />
+                        <item path="/" name="RAW_IMAGE" checked="0" />
+                    </module>
+                </collector>
+            </meView>
+            <canvasView>
+                <canvasArea name="Image Quality, CCD 01">
+                    <canvas x="649" y="0" w="325" h="282">
+                        <monitorElement collector="damic_me_collector" module="ddamaSModule" path="" name="FIT_PEDESTAL_COL_CHI" />
+                    </canvas>
+                    <canvas x="0" y="0" w="324" h="282">
+                        <monitorElement collector="damic_me_collector" module="ddamaSModule" path="" name="FIT_PEDESTAL_COL_MEAN" />
+                    </canvas>
+                    <canvas x="323" y="-1" w="327" h="283">
+                        <monitorElement collector="damic_me_collector" module="ddamaSModule" path="" name="FIT_PEDESTAL_COL_SIGMA" />
+                    </canvas>
+                    <canvas x="0" y="282" w="323" h="250">
+                        <monitorElement collector="damic_me_collector" module="ddamaSModule" path="" name="PIXEL_CHARGE" />
+                    </canvas>
+                </canvasArea>
+            </canvasView>
+        </view>
+        <controller>
+            <collector value="damic_me_collector" />
+        </controller>
+    </monitoring>
+</dqm4hep>

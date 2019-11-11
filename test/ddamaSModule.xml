@@ -1,0 +1,25 @@
+<dqm4hep>
+    <monitorelementcollector name="damic_me_collector"/>
+    <archiver open="true" directory="/damic/working/test_ddama" />
+
+    <runcontrol type="DimRunControlClient" name="ddamaRunControl" />
+    <cycle sleep="1" period="5" reset="false" />
+
+    <module type="ddamaSModule" name="ddamaSModule">
+        <parameter name="RunID">1</parameter>
+        <qualitytest type="MeanWithinExpectedTest" name="MeanAround0Short">
+            <Strategy> 0</Strategy>
+            <XMin> -1 </XMin>
+            <XMax> 1 </XMax>
+        </qualitytest>
+        <qualitytest type="Chi2FitFunctionTest" name="Chi2FittingGauss">
+			<Formula>"{0}*exp(-0.5*((x-{1})/{2})*((x-{1})/{2}))"</Formula>
+            <InputParameterList>22000.0 0.0 3.0</InputParameterList>
+            <FunctionNParameters>3</FunctionNParameters>
+            <FunctionXMin>-60</FunctionXMin>
+            <FunctionXMax>60</FunctionXMax>
+        </qualitytest>
+    </module>
+
+
+</dqm4hep>

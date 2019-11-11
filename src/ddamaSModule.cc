@@ -77,7 +77,7 @@ namespace dqm4hep
         // Initialization input ROOT file(s)
         // XXX hardcoded file name, not checked if file or histos exists, ...
 
-        const char * rootfilename = "/damic/working/recon_roots/d44_snolab_Int-800_Exp-30000_3337_1.root";
+        const char * rootfilename = "d44_snolab_Int-800_Exp-30000_3337_1.root";
         _inputFile = std::unique_ptr<TFile>(new TFile(rootfilename));
 
         _h2RawImage = static_cast<TH2F*>(_inputFile->Get("image_raw"));

@@ -2,3 +2,4 @@ dqm4dep_docs/*
 build/*
 .*swp
 lib/*
+test/dns.log
