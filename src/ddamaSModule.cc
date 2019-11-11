@@ -53,13 +53,16 @@ namespace dqm4hep
     {
         LOG4CXX_INFO( dqmMainLogger , "Module : " << getName() << " -- readSettings()" );
 
-        // Reading xml parameters for the test to be apply:
-        // test1
+        // XML inputs for the ME
+        RETURN_RESULT_IF_AND_IF(STATUS_CODE_SUCCESS, STATUS_CODE_NOT_FOUND, !=, DQMXmlHelper::readParameterValue(xmlHandle,"RunID", _runID));
+
+        // XML inputs for the QT
+        // testQuality1
         RETURN_RESULT_IF_AND_IF(STATUS_CODE_SUCCESS, STATUS_CODE_NOT_FOUND, !=, DQMModuleApi::registerQualityTestFactory(this,
                     "MeanWithinExpectedTest", new DQMMeanWithinExpectedTest::Factory()));
         RETURN_RESULT_IF_AND_IF(STATUS_CODE_SUCCESS, STATUS_CODE_NOT_FOUND, !=, DQMXmlHelper::createQualityTest(this, xmlHandle,
                     "MeanAround0Short"));
-        // test 2
+        // testQuality2
         RETURN_RESULT_IF_AND_IF(STATUS_CODE_SUCCESS, STATUS_CODE_NOT_FOUND, !=, DQMModuleApi::registerQualityTestFactory(this,
                     "Chi2FitFunctionTest", new DQMChi2FitFunctionTest::Factory()));
         RETURN_RESULT_IF_AND_IF(STATUS_CODE_SUCCESS, STATUS_CODE_NOT_FOUND, !=, DQMXmlHelper::createQualityTest(this, xmlHandle,
@@ -210,14 +213,6 @@ namespace dqm4hep
         _meH1PixelDist->get<TH1F>()->SetLineWidth(1);
         _meH1PixelDist->get<TH1F>()->GetXaxis()->SetRangeUser(-150., 150.);
         _meH1PixelDist->setDrawOption("E");
-
-        //for(unsigned int i=1; i<_h2RawImage->GetNbinsX()+1;++i)
-        //{
-        //    for(unsigned int j=0; i<_h2RawImage->GetNbinsY()+1;++j)
-        //    {
-        //        _meH2RawImage->get<TH2F>()->SetBinContent(i,j,_h2RawImage->GetBinContent(i,j));
-        //    }
-        //}
 
         return STATUS_CODE_SUCCESS;
     }

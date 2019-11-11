@@ -38,6 +38,9 @@ namespace dqm4hep
 	        StatusCode endModule();
 
         protected:
+            int _runID;
+            int _baselineRunID;
+
             DQMMonitorElementPtr _meH2RawImage;
 	        DQMMonitorElementPtr _meH1PixelDist;
             DQMMonitorElementPtr _meH1PedMeanDist;
@@ -51,7 +54,6 @@ namespace dqm4hep
             TH1F * _h1PedMeanDist;
             TH1F * _h1PedSigmaDist;
             TH1F * _h1PedChi2Dist;
-
     };
 }
 
